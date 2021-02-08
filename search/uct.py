@@ -67,22 +67,9 @@ def get_best_move(root):
     score = int(round(cp(node.Q()),0))
     return bestmove, node, score
 
-def getBest(node):
-    bestmove, node = max(node.children.items(), key=lambda item: (item[1].number_visits, item[1].Q()))
-    return bestmove, node
-
 def send_info(send, bestmove, count, delta, score):
     if send != None:                
         send("info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(score, count, int(round(count/delta, 0)), bestmove))
-
-def pv(root):
-    pv = ""
-    current = root
-    while current.is_expanded:
-        bestmove, node = getBest(current)
-        pv += bestmove + " "
-        current = node
-    return pv
 
 def UCT_search(board, num_reads, net=None, C=1.0, verbose=False, max_time=None, tree=None, send=None):
     if max_time == None:
@@ -106,7 +93,7 @@ def UCT_search(board, num_reads, net=None, C=1.0, verbose=False, max_time=None, 
         if (delta - delta_last > 5):
             delta_last = delta
             bestmove, node, score = get_best_move(root)
-            send_info(send, pv(root), count, delta, score)
+            send_info(send, bestmove, count, delta, score)
               
         if (time != None) and (delta > max_time):
             break
@@ -115,7 +102,7 @@ def UCT_search(board, num_reads, net=None, C=1.0, verbose=False, max_time=None, 
     if send != None:
         for nd in sorted(root.children.items(), key= lambda item: item[1].number_visits):
             send("info string {} {} \t(P: {}%) \t(Q: {})".format(nd[1].move, nd[1].number_visits, round(nd[1].prior*100,2), round(nd[1].Q(), 5)))
-        send("info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(score, count, int(round(count/delta, 0)), pv(root)))
+        send("info depth 1 seldepth 1 score cp {} nodes {} nps {} pv {}".format(score, count, int(round(count/delta, 0)), bestmove))
 
     # if we have a bad score, go for a draw
     return bestmove, score
